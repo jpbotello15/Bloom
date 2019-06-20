@@ -1,0 +1,53 @@
+#use <parse>
+#use <string>
+
+int main()
+{
+  //populate number array of length 100;
+  int[] numbers = alloc_array(int,100);
+  for (int i = 0; i < 100; i++){
+    numbers[i] = i;
+  }
+
+  //populate string array with 10 words;
+  string[] words = parse_tokens("hi the words are on the wal wtch ur bck");
+
+  int score = 0;
+
+  for (int i = 1; i <= 1000; i++){
+    bloom_t X = bloom_new(i);
+    bloom_t Y = bloom_new(i);
+    //@assert is_bloom(X);
+    //@assert is_bloom(Y);
+    //@assert X != Y;
+    score++;
+    
+    for (int j = 0; j<100; j++){
+      bloom_add(X, string_fromint(numbers[j]));
+      //@assert X != NULL;
+      //@assert bloom_contains(X,string_fromint(numbers[j]));
+    }
+
+    for (int k = 0; k < 10; k++){
+      if (!bloom_contains(Y, words[k])) score++;
+      //@assert Y != NULL;
+      bloom_add(Y, words[k]);
+      //@assert Y != NULL;
+      if (bloom_contains(Y, words[k])) score++;
+      //@assert Y != NULL;
+      //@assert bloom_contains(Y, words[k]);
+    }
+  
+
+    for (int q = 0; q < 10; q++){
+      if (!bloom_contains(Y, words[q])) assert(false);
+    }
+
+    for (int w = 0; w < 100; w++){
+      if (!bloom_contains(X,string_fromint(numbers[w]))) assert(false);
+    }
+
+  }
+
+  return (score - 11000) / 90;
+}

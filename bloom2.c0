@@ -1,0 +1,171 @@
+
+#use <string>
+#use <util>
+
+int hash1(string x)
+//@ensures \result >= 0 && \result <= int_max();
+{
+  int result = 0;
+  int len = string_length(x);
+
+  for(int i = 0; i < len; i++)
+  //@loop_invariant 0 <= i && i <= len;
+  {
+    result = result * 31 + char_ord(string_charat(x, i));
+  }
+  if (result < 0) result = result * -1;
+  return result;
+}
+
+int hash2(string x)
+//@ensures \result >= 0 && \result <= int_max();
+{
+  int result = 0;
+  int len = string_length(x);
+
+  for(int i = 0; i < len; i++)
+  //@loop_invariant 0<= i && i <= len;
+  {
+    result = result * 31 + char_ord(string_charat(x, i));
+  }
+
+  for(int i = 0; i < len; i++)
+  //@loop_invariant 0<= i && i <= len;
+  {
+    result = (1664625 * result + 1013904233) +
+             char_ord(string_charat(x,i));
+  }
+  if (result < 0) result = result * -1;
+  return result;
+
+}
+
+int hash3(string x) 
+//@ensures \result >= 0 && \result <= int_max();
+{
+  int result = 0;
+  int len = string_length(x);
+
+  for(int i =0; i < len;i++)
+  //@loop_invariant 0<= i && i <= len;
+  {
+    result = (1664625 * result + 1013904223) + 
+             char_ord(string_charat(x,i));
+  }
+  if (result < 0) result = result * -1;
+  return result;
+}
+
+
+bool get_bit(int[] A, int i)
+//@requires 0 <= i && i/32 < \length(A);
+{
+  int int_wanted = A[i/32];
+  int bit_wanted = (i % 32) / 8;
+
+  int bit = (int_wanted & (1<<bit_wanted)) >> bit_wanted;
+
+  if (bit == 1) return true;
+  return false;
+}
+
+
+void set_bit(int[] A, int i)
+//@requires 0 <= i && i/32 < \length(A);
+//@ensures get_bit(A, i);
+{
+  int int_wanted = A[i/32];
+  int bit_wanted = (i % 32) / 8;
+
+  int_wanted = int_wanted | (1<<bit_wanted);
+  A[i/32] = int_wanted;
+  return;
+}
+
+bool get_bit(int[] A, int i)
+ /*@requires 0 <= i && i/32 < \length(A); @*/ ;
+
+void set_bit(int[] A, int i)
+/*@requires 0 <= i && i/32 < \length(A); @*/
+/*@ensures get_bit(A, i); @*/ ;
+
+
+typedef struct bloom_filter bloom;
+
+struct bloom_filter {
+  int[] data;
+  int limit; // limit == \length(data)
+};
+
+bool is_expected_len(int[] A, int length){
+  //@assert \length(A) == length;
+  return true;
+}
+
+bool is_bloom(bloom* B) {
+  if (B == NULL) return false;
+  if (B->limit == 0) return false;
+  //@assert \length(B->data) != 0;
+  if (!is_expected_len(B->data,(B->limit))) return false;
+  return true;
+}
+
+bloom* bloom_new(int limit)
+//@requires limit > 0;
+//@ensures is_bloom(\result);
+{
+  bloom* B = alloc(bloom);
+  B->data = alloc_array(int,limit);
+  B->limit = limit;
+  return B;
+}
+
+bool bloom_contains(bloom* B, string x)
+//@requires is_bloom(B);
+//@ensures is_bloom(B);
+{
+  int index1 = hash1(x) % (B->limit*32);
+  int index2 = hash2(x) % (B->limit*32);
+  int index3 = hash3(x) % (B->limit*32);
+  bool b1 = false;
+  bool b2 = false;
+  bool b3 = false;
+
+  b1 = get_bit(B->data,index1);
+  b2 = get_bit(B->data,index2);
+  b3 = get_bit(B->data,index3);
+
+  return (b1 && b2 && b3);
+}
+
+void bloom_add(bloom* B, string x)
+//@requires is_bloom(B);
+//@ensures is_bloom(B);
+//@ensures bloom_contains(B, x);
+{
+  int index1 = hash1(x) % (B->limit*32);
+  int index2 = hash2(x) % (B->limit*32);
+  int index3 = hash3(x) % (B->limit*32);
+  set_bit(B->data,index1);
+  set_bit(B->data,index2);
+  set_bit(B->data,index3);
+  return;
+}
+
+
+typedef bloom* bloom_t;
+
+/*** Interface to bloom filters ***/
+
+// typedef ______* bloom_t;
+
+bloom_t bloom_new(int limit)
+  /*@requires limit > 0; @*/
+  /*@ensures \result != NULL; @*/ ;
+
+bool bloom_contains(bloom_t B, string x)
+  /*@requires B != NULL; @*/ ;
+
+void bloom_add(bloom_t B, string x)
+  /*@requires B != NULL; @*/
+  /*@ensures bloom_contains(B, x); @*/ ;
